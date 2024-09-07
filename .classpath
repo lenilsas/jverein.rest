@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/jameica"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/jameica.webadmin"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/openjverein"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-11">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="/jameica.webadmin/lib/json-20210307.jar"/>
+	<classpathentry kind="lib" path="/jameica.webadmin/lib/javax.servlet-api-3.1.0.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
