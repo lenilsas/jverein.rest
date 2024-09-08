@@ -3,11 +3,11 @@
 <plugin xmlns="http://www.willuhn.de/schema/jameica-plugin"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://www.willuhn.de/schema/jameica-plugin http://www.willuhn.de/schema/jameica-plugin-1.5.xsd"
-        name="jverein.rest" version="1.0.0" class="de.willuhn.jameica.jverein.rest.Plugin">
+        name="jverein.rest" version="1.0.0" class="de.jost_net.JVerein.rest.Plugin">
 
   <description>Rest Schnittstelle für Jverein</description>
-  <url>....</url>
-  <homepage validate="true">https://willuhn.de</homepage>
+  <url>https://github.com/lenilsas/jverein.rest</url>
+  <homepage validate="true">https://github.com/lenilsas/jverein.rest</homepage>
   <license>GPL - http://www.gnu.org/copyleft/gpl.html</license>
 
   <requires jameica="2.10.0+">
