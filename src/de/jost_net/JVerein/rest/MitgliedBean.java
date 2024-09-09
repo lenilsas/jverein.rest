@@ -559,11 +559,11 @@ public class MitgliedBean implements AutoRestBean
     {
       if (Zahlungsweg.get(Integer.parseInt(zahlungsweg)) == null)
         throw new ApplicationException("Zahlungsweg ungültig: " + zahlungsweg);
-      if (Integer.parseInt(zahlungsweg) == Zahlungsweg.VOLLZAHLER
+      if (Integer.parseInt(zahlungsweg) == 4//Zahlungsweg.VOLLZAHLER hardcodiert aus Komapilitätsgründen zu 2.8.22
           && m.getBeitragsgruppe()
               .getBeitragsArt() != ArtBeitragsart.FAMILIE_ANGEHOERIGER)
         throw new ApplicationException("Zahlungsweg VOLLZAHLER("
-            + Zahlungsweg.VOLLZAHLER + ") nur für Familienangehörige");
+            + 4/*Zahlungsweg.VOLLZAHLER*/ + ") nur für Familienangehörige");
       m.setZahlungsweg(Integer.parseInt(zahlungsweg));
     }
     else
