@@ -1,12 +1,37 @@
 package de.jost_net.JVerein.rest;
 
-import de.jost_net.JVerein.rmi.Adresstyp;
+import java.rmi.RemoteException;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.json.JSONObject;
+
+import de.jost_net.JVerein.Einstellungen;
+import de.jost_net.JVerein.Einstellungen.Property;
+import de.jost_net.JVerein.keys.ArtBeitragsart;
+import de.jost_net.JVerein.keys.ArtBuchungsart;
+import de.jost_net.JVerein.keys.Beitragsmodel;
+import de.jost_net.JVerein.keys.Datentyp;
+import de.jost_net.JVerein.keys.IntervallZusatzzahlung;
+import de.jost_net.JVerein.keys.Zahlungsrhythmus;
+import de.jost_net.JVerein.keys.Zahlungstermin;
+import de.jost_net.JVerein.keys.Zahlungsweg;
+import de.jost_net.JVerein.rest.util.JsonUtil;
 import de.jost_net.JVerein.rmi.Beitragsgruppe;
 import de.jost_net.JVerein.rmi.Buchungsart;
+import de.jost_net.JVerein.rmi.Buchungsklasse;
 import de.jost_net.JVerein.rmi.Eigenschaft;
 import de.jost_net.JVerein.rmi.Eigenschaften;
 import de.jost_net.JVerein.rmi.Mitglied;
+import de.jost_net.JVerein.rmi.Mitgliedstyp;
 import de.jost_net.JVerein.rmi.SekundaereBeitragsgruppe;
+import de.jost_net.JVerein.rmi.Steuer;
 import de.jost_net.JVerein.rmi.Zusatzbetrag;
 import de.jost_net.JVerein.rmi.Zusatzfelder;
 import de.jost_net.JVerein.util.Datum;
@@ -21,32 +46,10 @@ import de.willuhn.jameica.webadmin.annotation.Request;
 import de.willuhn.jameica.webadmin.rest.AutoRestBean;
 import de.willuhn.util.ApplicationException;
 
-import java.rmi.RemoteException;
-import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-
-import org.json.JSONObject;
-
-import de.jost_net.JVerein.Einstellungen;
-import de.jost_net.JVerein.keys.ArtBeitragsart;
-import de.jost_net.JVerein.keys.Beitragsmodel;
-import de.jost_net.JVerein.keys.Datentyp;
-import de.jost_net.JVerein.keys.IntervallZusatzzahlung;
-import de.jost_net.JVerein.keys.Zahlungsrhythmus;
-import de.jost_net.JVerein.keys.Zahlungstermin;
-import de.jost_net.JVerein.keys.Zahlungsweg;
-import de.jost_net.JVerein.rest.util.JsonUtil;
-
 /**
  * REST-Bean zum Zugriff auf die Mitglieder.
  */
-@Doc("Jverein: Liefert Informationen über die Mitglieder")
+@Doc("Jverein: Liefert Informationen Ã¼ber die Mitglieder")
 public class MitgliedBean implements AutoRestBean
 {
 
@@ -92,8 +95,8 @@ public class MitgliedBean implements AutoRestBean
   @Doc(value = "Erstellt ein neues Mitglied. "
       + "Die Funktion erwartet folgende Parameter via GET oder POST.<br/>"
       + "<ul>"
-      + "  <li><b>personenart</b>: Personenart (n: natürliche Paerson; j: Juristische Person)</li>"
-      + "  <li><b>adresstyp</b>: optional: Adresstyp (default 1 für mitglieder)</li>"
+      + "  <li><b>personenart</b>: Personenart (n: natÃ¼rliche Paerson; j: Juristische Person)</li>"
+      + "  <li><b>adresstyp</b>: optional: Adresstyp (default 1 fÃ¼r mitglieder)</li>"
       + "  <li><b>anrede</b>: optional: Anrede</li>"
       + "  <li><b>titel</b>: optional: Titel</li>"
       + "  <li><b>name</b>: Name</li>" + "  <li><b>vorname</b>: Vorname</li>"
@@ -111,8 +114,8 @@ public class MitgliedBean implements AutoRestBean
       + "  <li><b>Optional: bic</b>: BIC</li>" + "  <li><b>iban</b>: IBAN</li>"
 
       + "  <li><b>externemitgliedsnummer</b>: optional: Externe Mitgliedsnummer</li>"
-      + "  <li><b>zahlungsweg</b>: Optional: Zahlungsweg (1: Basislastschrift, 2: Überweisung, 3: Bar, 4: Durch Vollzahler)</li>"
-      + "  <li><b>zahlungsrhytmus</b>: Optional: Zahlungsrthmus (12: jährlich, 6 halbjährlich, 3 vierteljährlich, default 1 monatlich)</li>"
+      + "  <li><b>zahlungsweg</b>: Optional: Zahlungsweg (1: Basislastschrift, 2: Ãœberweisung, 3: Bar, 4: Durch Vollzahler)</li>"
+      + "  <li><b>zahlungsrhytmus</b>: Optional: Zahlungsrthmus (12: jÃ¤hrlich, 6 halbjÃ¤hrlich, 3 vierteljÃ¤hrlich, default 1 monatlich)</li>"
 
       + "  <li><b>telefonprivat</b>: optional: Telefon</li>"
       + "  <li><b>telefondienstlich</b>: optional: Telefon dienstlich</li>"
@@ -120,7 +123,7 @@ public class MitgliedBean implements AutoRestBean
       + "  <li><b>email</b>: optional: Email</li>"
       + "  <li><b>individuellerbeitrag</b>: optional: Individueller Beitrag</li>"
       + "  <li><b>austritt</b>: optional: Austrittsdatum</li>"
-      + "  <li><b>kuendigung</b>: optional: Kündigungsdatum</li>"
+      + "  <li><b>kuendigung</b>: optional: KÃ¼ndigungsdatum</li>"
       + "  <li><b>sterbetag</b>: optional: Sterbedatum</li>"
       + "  <li><b>vermerk1</b>: optional: Vermerk1</li>"
       + "  <li><b>vermerk2</b>: optional: Vererk2</li>"
@@ -139,18 +142,18 @@ public class MitgliedBean implements AutoRestBean
       + "  <li><b>ktoigeschlecht</b>: optional: Kontoinhaber Geschlecht</li>"
 
       + "  <li><b>zahlungstermin</b>: Optional: Zahlungstermin (default 1: Monatlich\n"
-      + "31: Vierteljährlich (Jan./Apr./Juli/Okt)\n"
-      + "32: Vierteljährlich (Feb./Mai /Aug./Nov.)\n"
-      + "33: Vierteljährlich (März/Juni/Sep./Dez.)\n"
-      + "61: Halbjährlich (Jan./Juli)\n" + "62: Halbjährlich (Feb./Aug.)\n"
-      + "63: Halbjährlich (März/Sep.)\n" + "64: Halbjährlich (Apr./Okt.)\n"
-      + "65: Halbjährlich (Mai /Nov.)\n" + "66: Halbjährlich (Juni/Dez.)\n"
-      + "1201: Jährlich (Jan.)\n" + "1202: Jährlich (Feb.)\n"
-      + "1203: Jährlich (März)\n" + "1204: Jährlich (Apr.)\n"
-      + "1205: Jährlich (Mai )\n" + "1206: Jährlich (Juni)\n"
-      + "1207: Jährlich (Juli)\n" + "1208: Jährlich (Aug.)\n"
-      + "1209: Jährlich (Sep.)\n" + "1210: Jährlich (Okt.)\n"
-      + "1211: Jährlich (Nov.)\n" + "1212: Jährlich (Dez.))"
+      + "31: VierteljÃ¤hrlich (Jan./Apr./Juli/Okt)\n"
+      + "32: VierteljÃ¤hrlich (Feb./Mai /Aug./Nov.)\n"
+      + "33: VierteljÃ¤hrlich (MÃ¤rz/Juni/Sep./Dez.)\n"
+      + "61: HalbjÃ¤hrlich (Jan./Juli)\n" + "62: HalbjÃ¤hrlich (Feb./Aug.)\n"
+      + "63: HalbjÃ¤hrlich (MÃ¤rz/Sep.)\n" + "64: HalbjÃ¤hrlich (Apr./Okt.)\n"
+      + "65: HalbjÃ¤hrlich (Mai /Nov.)\n" + "66: HalbjÃ¤hrlich (Juni/Dez.)\n"
+      + "1201: JÃ¤hrlich (Jan.)\n" + "1202: JÃ¤hrlich (Feb.)\n"
+      + "1203: JÃ¤hrlich (MÃ¤rz)\n" + "1204: JÃ¤hrlich (Apr.)\n"
+      + "1205: JÃ¤hrlich (Mai )\n" + "1206: JÃ¤hrlich (Juni)\n"
+      + "1207: JÃ¤hrlich (Juli)\n" + "1208: JÃ¤hrlich (Aug.)\n"
+      + "1209: JÃ¤hrlich (Sep.)\n" + "1210: JÃ¤hrlich (Okt.)\n"
+      + "1211: JÃ¤hrlich (Nov.)\n" + "1212: JÃ¤hrlich (Dez.))"
       + "</ul>", example = "jverein/mitglied/create")
   @Path("/jverein/mitglied/create$")
   public Object create() throws Exception
@@ -242,12 +245,12 @@ public class MitgliedBean implements AutoRestBean
   }
 
   /**
-   * Listet die sekundären Beitragsgruppen eines Mitglied.
+   * Listet die sekundÃ¤ren Beitragsgruppen eines Mitglied.
    * 
-   * @return Die sekundären Beitragsgruppen des Mitglies.
+   * @return Die sekundÃ¤ren Beitragsgruppen des Mitglies.
    * @throws Exception
    */
-  @Doc(value = "Liste der sekundären Beitragsgruppen eines Mitglied. ", example = "jverein/mitglied/123/sekundaer")
+  @Doc(value = "Liste der sekundÃ¤ren Beitragsgruppen eines Mitglied. ", example = "jverein/mitglied/123/sekundaer")
   @Path("/jverein/mitglied/([0-9]{1,8})/sekundaer$")
   public Object sekundaerList(String id) throws Exception
   {
@@ -268,10 +271,10 @@ public class MitgliedBean implements AutoRestBean
   /**
    * Listet die zusatzbeitraege eines Mitglied.
    * 
-   * @return Die zusatzbeiträge des Mitglies.
+   * @return Die zusatzbeitrÃ¤ge des Mitglies.
    * @throws Exception
    */
-  @Doc(value = "Liste der Zusatzbeiträge eines Mitglied. ", example = "jverein/mitglied/123/zusatzbeitrag")
+  @Doc(value = "Liste der ZusatzbeitrÃ¤ge eines Mitglied. ", example = "jverein/mitglied/123/zusatzbeitrag")
   @Path("/jverein/mitglied/([0-9]{1,8})/zusatzbeitrag$")
   public Object zusatzbeitragList(String id) throws Exception
   {
@@ -285,10 +288,10 @@ public class MitgliedBean implements AutoRestBean
   /**
    * Listet die offenen zusatzbeitraege eines Mitglied.
    * 
-   * @return Die offenen zusatzbeiträge des Mitglies.
+   * @return Die offenen zusatzbeitrÃ¤ge des Mitglies.
    * @throws Exception
    */
-  @Doc(value = "Liste der offenen Zusatzbeiträge eines Mitglied. ", example = "jverein/mitglied/123/zusatzbeitrag/open")
+  @Doc(value = "Liste der offenen ZusatzbeitrÃ¶ge eines Mitglied. ", example = "jverein/mitglied/123/zusatzbeitrag/open")
   @Path("/jverein/mitglied/([0-9]{1,8})/zusatzbeitrag/open$")
   public Object zusatzbeitragOpenList(String id) throws Exception
   {
@@ -300,7 +303,7 @@ public class MitgliedBean implements AutoRestBean
     while(it.hasNext())
     {
       Zusatzbetrag z = it.next();
-      if(z.isAktiv(new Date()))
+      if(z.isOffen(new Date()))
         list.add(z);
     }
 
@@ -315,13 +318,16 @@ public class MitgliedBean implements AutoRestBean
    */
   @Doc(value = "Einem Mitglied einen Zusatzbeitrag zuweisen.\n"
       + "Die Funktion erwartet folgende Parameter via GET oder POST.<br/>\n"
-      + "<ul>\"\n" + "  <li><b>faelligkeit</b>: Fälligkeit</li>\n"
+      + "<ul>\n" + "  <li><b>faelligkeit</b>: FÃ¤lligkeit</li>\n"
       + "  <li><b>buchungstext</b>: Buchungstext</li>\n"
       + "  <li><b>betrag</b>: Betrag</li>\n"
       + "  <li><b>startdatum</b>: Startdatum</li>\n"
       + "  <li><b>intervall</b>: optional: Intervall</li>\n"
       + "  <li><b>endedatum</b>: optional: endedatum</li>\n"
-      + "  <li><b>buchungsart</b>: optional: Buchungsart</li>\n"
+      + "  <li><b>buchungsart</b>: optional: Buchungsart (Nummer)</li>\n"
+      + "  <li><b>buchungsklasse</b>: optional: Buchungsklasse (Nummer)</li>\n"
+      + "  <li><b>zahlungsweg</b>: optional: Zahlungsweg (0: default, 1: Lastschrift, 2: Ãœberweisung, 3: Bar)</li>\n"
+      + "  <li><b>steuer</b>: optional: Steuer (Satz)</li>\n"
       + "  </ul>", example = "jverein/mitglied/123/zusatzbeitrag/add")
   @Path("/jverein/mitglied/([0-9]{1,8})/zusatzbeitrag/add$")
   public Object addZusatzbeitrag(String id) throws Exception
@@ -385,12 +391,81 @@ public class MitgliedBean implements AutoRestBean
       }
 
       String buchungsart = request.getParameter("buchungsart");
+      Buchungsart ba = null;
       if (buchungsart != null && buchungsart.length() != 0)
       {
-        Buchungsart b = Einstellungen.getDBService()
-            .createObject(Buchungsart.class, buchungsart);
-        z.setBuchungsart(b);
+        DBIterator<Buchungsart> it = Einstellungen.getDBService()
+            .createList(Buchungsart.class);
+        it.addFilter("nummer = ?", buchungsart);
+        if (!it.hasNext())
+        {
+          throw new ApplicationException("Buchungsart nicht gefunden");
+        }
+        ba = it.next();
+        z.setBuchungsart(ba);
       }
+
+      String buchungsklasse = request.getParameter("buchungsklasse");
+      if (buchungsklasse != null && buchungsklasse.length() != 0)
+      {
+        DBIterator<Buchungsklasse> it = Einstellungen.getDBService()
+            .createList(Buchungsklasse.class);
+        it.addFilter("nummer = ?", buchungsklasse);
+        if (!it.hasNext())
+        {
+          throw new ApplicationException("Buchungsklasse nicht gefunden");
+        }
+        z.setBuchungsklasseId(Long.parseLong(it.next().getID()));
+      }
+      
+      String steuer = request.getParameter("steuer");
+      // Bei 0 setzen wir keine Steuer
+      if (steuer != null && !"0".equals(steuer))
+      {
+        if (buchungsart == null)
+        {
+          throw new ApplicationException(
+              "Steuer nur mÃ¶glich, wenn auch eine Buchungsart angegeben ist.");
+        }
+      
+        DBIterator<Steuer> it = Einstellungen.getDBService()
+            .createList(Steuer.class);
+        it.join("buchungsart");
+        it.addFilter("buchungsart.id = steuer.buchungsart");
+        
+        it.addFilter("buchungsart.art = ?", ba.getArt());
+        it.addFilter("satz = ?", steuer);
+        if (it.size() == 0)
+        {
+          String steuerart = "";
+          switch (ba.getArt())
+          {
+            case ArtBuchungsart.AUSGABE:
+              steuerart = "Vorsteuer";
+              break;
+            case ArtBuchungsart.EINNAHME:
+              steuerart = "Umsatzsteuer";
+              break;
+            case ArtBuchungsart.UMBUCHUNG:
+              throw new ApplicationException(
+                  "Steuer bei Umbuchungen ist bei ZusatzbetrÃ¤gen nicht mÃ¶glich");
+          }
+          throw new ApplicationException(String.format(
+              steuerart + " mit dem Satz %s%% nicht gefunden.", steuer));
+        }
+        z.setSteuer(it.next());
+      }
+
+      String zahlungsweg = request.getParameter("zahlungsweg");
+      if (zahlungsweg != null)
+      {
+        z.setZahlungsweg(new Zahlungsweg(Integer.parseInt(zahlungsweg)));
+      }
+      else
+      {
+        z.setZahlungsweg(new Zahlungsweg(Zahlungsweg.STANDARD));
+      }
+
       z.store();
     }
     catch (NumberFormatException e)
@@ -421,8 +496,8 @@ public class MitgliedBean implements AutoRestBean
    * @return Die Eigenschaften des Mitglies.
    * @throws Exception
    */
-  @Doc(value = "Ändert ein Mitglied. "
-      + "mögliche Parameter siehe create (alle optional)", example = "jverein/mitglied/update/123")
+  @Doc(value = "Ã„ndert ein Mitglied. "
+      + "mÃ¶gliche Parameter siehe create (alle optional)", example = "jverein/mitglied/update/123")
   @Path("/jverein/mitglied/update/([0-9]{1,8})$")
   public Object update(String id) throws Exception
   {
@@ -451,25 +526,25 @@ public class MitgliedBean implements AutoRestBean
   private Mitglied fill(Mitglied m) throws RemoteException,
       ApplicationException, ParseException, SEPAException
   {
-    String adresstyp = request.getParameter("adresstyp");
-    if (adresstyp != null && adresstyp.length() != 0)
+    String mitgliedstyp = request.getParameter("mitgliedstyp");
+    if (mitgliedstyp != null && mitgliedstyp.length() != 0)
     {
       try
       {
-        Adresstyp at = (Adresstyp) Einstellungen.getDBService()
-            .createObject(Adresstyp.class, adresstyp);
-        m.setAdresstyp(Integer.valueOf(at.getID()));
+        Mitgliedstyp at = (Mitgliedstyp) Einstellungen.getDBService()
+            .createObject(Mitgliedstyp.class, mitgliedstyp);
+        m.setMitgliedstyp(Long.valueOf(at.getID()));
       }
       catch (ObjectNotFoundException e)
       {
         throw new ApplicationException(
-            "Adresstyp nicht vorhanden: " + adresstyp);
+            "Mitgliedstyp nicht vorhanden: " + mitgliedstyp);
       }
     }
     else
     {
-      if (m.getAdresstyp() == null)
-        m.setAdresstyp(1);
+      if (m.getMitgliedstyp() == null)
+        m.setMitgliedstyp(Long.parseLong(Mitgliedstyp.MITGLIED));
     }
 
     String adressierungszusatz = request.getParameter("adressierungszusatz");
@@ -498,7 +573,7 @@ public class MitgliedBean implements AutoRestBean
       catch (ParseException e)
       {
         throw new ApplicationException(
-            "Ungültiges Datumsformat für austritt: " + austritt);
+            "UngÃ¼ltiges Datumsformat fÃ¼r austritt: " + austritt);
       }
     }
 
@@ -509,7 +584,7 @@ public class MitgliedBean implements AutoRestBean
     }
 
     String beitragsgruppe = request.getParameter("beitragsgruppe");
-    if (adresstyp == null || adresstyp == "1")
+    if (mitgliedstyp == null || mitgliedstyp == "1")
     {
       if (beitragsgruppe != null && beitragsgruppe.length() != 0)
       {
@@ -519,12 +594,12 @@ public class MitgliedBean implements AutoRestBean
               .createObject(Beitragsgruppe.class, beitragsgruppe);
           if (bg.getSekundaer())
             throw new ApplicationException(
-                "Beitragsgruppe ist sekundäre Beitragsgruppe: "
+                "Beitragsgruppe ist sekundÃ¤re Beitragsgruppe: "
                     + beitragsgruppe);
-          m.setBeitragsgruppe(Integer.valueOf(bg.getID()));
+          m.setBeitragsgruppe(bg);
           if (bg.getBeitragsArt() != ArtBeitragsart.FAMILIE_ANGEHOERIGER)
           {
-            m.setZahlerID(null);
+            m.setVollZahlerID(null);
           }
         }
         catch (ObjectNotFoundException e)
@@ -540,7 +615,7 @@ public class MitgliedBean implements AutoRestBean
       }
     }
 
-    if (Einstellungen.getEinstellung().getIndividuelleBeitraege())
+    if ((Boolean) Einstellungen.getEinstellung(Property.INDIVIDUELLEBEITRAEGE))
     {
       String individuellerBeitrag = request
           .getParameter("individuellerbeitrag");
@@ -558,29 +633,30 @@ public class MitgliedBean implements AutoRestBean
     if (zahlungsweg != null && zahlungsweg.length() != 0)
     {
       if (Zahlungsweg.get(Integer.parseInt(zahlungsweg)) == null)
-        throw new ApplicationException("Zahlungsweg ungültig: " + zahlungsweg);
-      if (Integer.parseInt(zahlungsweg) == 4//Zahlungsweg.VOLLZAHLER hardcodiert aus Komapilitätsgründen zu 2.8.22
+        throw new ApplicationException("Zahlungsweg ungÃ¼ltig: " + zahlungsweg);
+      if (Integer.parseInt(zahlungsweg) == Zahlungsweg.VOLLZAHLER
           && m.getBeitragsgruppe()
               .getBeitragsArt() != ArtBeitragsart.FAMILIE_ANGEHOERIGER)
         throw new ApplicationException("Zahlungsweg VOLLZAHLER("
-            + 4/*Zahlungsweg.VOLLZAHLER*/ + ") nur für Familienangehörige");
+            + Zahlungsweg.VOLLZAHLER + ") nur fÃ¼r FamilienangehÃ¶rige");
       m.setZahlungsweg(Integer.parseInt(zahlungsweg));
     }
     else
     {
       if (m.getZahlungsweg() == null)
-        m.setZahlungsweg(Einstellungen.getEinstellung().getZahlungsweg());
+        m.setZahlungsweg(
+            (Integer) Einstellungen.getEinstellung(Property.ZAHLUNGSWEG));
     }
 
-    if (Einstellungen.getEinstellung()
-        .getBeitragsmodel() == Beitragsmodel.MONATLICH12631)
+    if ((Integer) Einstellungen.getEinstellung(
+        Property.BEITRAGSMODEL) == Beitragsmodel.MONATLICH12631.getKey())
     {
       String zahlungsrhytmus = request.getParameter("zahlungsrhytmus");
       if (zahlungsrhytmus != null && zahlungsrhytmus.length() != 0)
       {
         if (Zahlungsrhythmus.get(Integer.parseInt(zahlungsrhytmus)) == null)
           throw new ApplicationException(
-              "Ungültiger Zahlungsrythmus: " + zahlungsrhytmus);
+              "Ungï¿½ltiger Zahlungsrythmus: " + zahlungsrhytmus);
         m.setZahlungsrhythmus(Integer.parseInt(zahlungsrhytmus));
       }
       else
@@ -592,15 +668,15 @@ public class MitgliedBean implements AutoRestBean
     else
       m.setZahlungsrhythmus(Zahlungsrhythmus.MONATLICH);
 
-    if (Einstellungen.getEinstellung()
-        .getBeitragsmodel() == Beitragsmodel.FLEXIBEL)
+    if ((Integer) Einstellungen.getEinstellung(
+        Property.BEITRAGSMODEL) == Beitragsmodel.FLEXIBEL.getKey())
     {
       String zahlungstermin = request.getParameter("zahlungstermin");
       if (zahlungstermin != null && zahlungstermin.length() != 0)
       {
         if (Zahlungstermin.getByKey(Integer.parseInt(zahlungstermin)) == null)
           throw new ApplicationException(
-              "Ungültiger Zahlungstermin: " + zahlungstermin);
+              "UngÃ¼ltiger Zahlungstermin: " + zahlungstermin);
         m.setZahlungstermin(Integer.parseInt(zahlungstermin));
       }
       else
@@ -634,7 +710,7 @@ public class MitgliedBean implements AutoRestBean
       {
         if (e.getFehler() == SEPAException.Fehler.UNGUELTIGES_LAND)
           throw new ApplicationException(
-              "IBAN Ungültiges Land: " + e.getMessage());
+              "IBAN UngÃ¼ltiges Land: " + e.getMessage());
         else
           throw new ApplicationException(e.getMessage());
       }
@@ -658,11 +734,11 @@ public class MitgliedBean implements AutoRestBean
     if (email != null && email.length() != 0)
     {
       if (!EmailValidator.isValid(email))
-        throw new ApplicationException("Ungültige Email: " + email);
+        throw new ApplicationException("UngÃ¼ltige Email: " + email);
       m.setEmail(email);
     }
 
-    if (Einstellungen.getEinstellung().getExterneMitgliedsnummer())
+    if ((Boolean) Einstellungen.getEinstellung(Property.EXTERNEMITGLIEDSNUMMER))
     {
       String externemitgliedsnummer = request
           .getParameter("externemitgliedsnummer");
@@ -698,7 +774,7 @@ public class MitgliedBean implements AutoRestBean
       if (!geschlecht.toLowerCase().equals("m")
           && !geschlecht.toLowerCase().equals("w")
           && !geschlecht.toLowerCase().equals("o"))
-        throw new ApplicationException("Ungültiges Geschlecht: " + geschlecht);
+        throw new ApplicationException("UngÃ¼ltiges Geschlecht: " + geschlecht);
       m.setGeschlecht(geschlecht);
     }
 
@@ -720,7 +796,7 @@ public class MitgliedBean implements AutoRestBean
     if (ktoiemail != null && ktoiemail.length() != 0)
     {
       if (!EmailValidator.isValid(ktoiemail))
-        throw new ApplicationException("Ungültige Email: " + ktoiemail);
+        throw new ApplicationException("UngÃ¼ltige Email: " + ktoiemail);
       m.setKtoiEmail(ktoiemail);
     }
 
@@ -784,7 +860,7 @@ public class MitgliedBean implements AutoRestBean
           && !ktoigeschlecht.toLowerCase().equals("w")
           && !ktoigeschlecht.toLowerCase().equals("o"))
         throw new ApplicationException(
-            "Ungültiges Geschlecht: " + ktoigeschlecht);
+            "Ungï¿½ltiges Geschlecht: " + ktoigeschlecht);
       m.setKtoiGeschlecht(ktoigeschlecht);
     }
 

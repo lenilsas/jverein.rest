@@ -20,7 +20,7 @@ public class JsonUtil
    * @return JSON-Liste.
    * @throws Exception
    */
-  public static JSONArray toJson(GenericIterator list) throws Exception
+  public static JSONArray toJson(GenericIterator<?> list) throws Exception
   {
     JSONArray result = new JSONArray();
     if (list != null)
@@ -39,7 +39,7 @@ public class JsonUtil
    * @return JSON-Liste.
    * @throws Exception
    */
-  public static JSONArray toJson(List list) throws Exception
+  public static JSONArray toJson(List<?> list) throws Exception
   {
     JSONArray result = new JSONArray();
     if (list != null)

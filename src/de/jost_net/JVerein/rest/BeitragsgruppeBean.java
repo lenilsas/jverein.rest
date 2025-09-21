@@ -1,8 +1,8 @@
 package de.jost_net.JVerein.rest;
 
 import de.jost_net.JVerein.Einstellungen;
-import de.jost_net.JVerein.rmi.Beitragsgruppe;
 import de.jost_net.JVerein.rest.util.JsonUtil;
+import de.jost_net.JVerein.rmi.Beitragsgruppe;
 import de.willuhn.jameica.webadmin.annotation.Doc;
 import de.willuhn.jameica.webadmin.annotation.Path;
 import de.willuhn.jameica.webadmin.rest.AutoRestBean;
@@ -10,7 +10,7 @@ import de.willuhn.jameica.webadmin.rest.AutoRestBean;
 /**
  * REST-Bean zum Zugriff auf die Beitragsgruppen.
  */
-@Doc("Jverein: Liefert Informationen über die Beitragsgruppen")
+@Doc("Jverein: Liefert Informationen Ã¼ber die Beitragsgruppen")
 public class BeitragsgruppeBean implements AutoRestBean
 {
 

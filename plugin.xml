@@ -1,18 +1,18 @@
-<?xml version="1.0" encoding="ISO-8859-1"?>
+<?xml version="1.0" encoding="UTF-8"?>
 
 <plugin xmlns="http://www.willuhn.de/schema/jameica-plugin"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://www.willuhn.de/schema/jameica-plugin http://www.willuhn.de/schema/jameica-plugin-1.5.xsd"
         name="jverein.rest" version="1.0.0" class="de.jost_net.JVerein.rest.Plugin">
 
-  <description>Rest Schnittstelle für Jverein</description>
-  <url>https://github.com/lenilsas/jverein.rest</url>
-  <homepage validate="true">https://github.com/lenilsas/jverein.rest</homepage>
+  <description>Rest Schnittstelle fÃ¼r Jverein</description>
+  <url>https://github.com/openjverein/jverein.rest</url>
+  <homepage validate="true">https://github.com/openjverein/jverein.rest</homepage>
   <license>GPL - http://www.gnu.org/copyleft/gpl.html</license>
 
   <requires jameica="2.10.0+">
 
-    <import plugin="jverein"         version="2.8.22+"/>
+    <import plugin="jverein"         version="3.1.0+"/>
 
     <!-- Plattform-Erweiterungen -->
     <import plugin="jameica.webadmin" version="2.10.0+"/>
