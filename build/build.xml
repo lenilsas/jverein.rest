@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="ISO-8859-1"?>
+<?xml version="1.0" encoding="UTF-8"?>
 
 <!--
  $Revision: 1.4 $
@@ -10,8 +10,6 @@
 -->
 
 <project basedir=".." default="all" name="All">
-
-
   <target name="init" description="inits the build">
 
     <property environment="env" />
@@ -47,18 +45,10 @@
 		<property name="project.zipdir" 			  value="${project.release}/${plugin.name}" />
 
 		<property name="src.dir" 					      value="src" />
-		<property name="lang.dir" 					    value="${src.dir}/lang" />
-    <property name="img.dir"                value="${src.dir}/img" />
-    <property name="help.dir"               value="${src.dir}/help" />
 		<property name="lib.dir" 					      value="lib" />
-    <property name="sql.dir"                value="sql" />
-		<property name="webapps.dir" 			      value="webapps" />
 		<property name="class.dir" 					    value="${project.tmp}/bin" />
 
 		<available file="${lib.dir}"     type="dir" property="havelib" />
-    <available file="${sql.dir}"     type="dir" property="havesql" />
-		<available file="${webapps.dir}" type="dir" property="havewebapps" />
-
 		<path id="compilepath">
 			<pathelement path="${define.compilepath}" />
       <fileset dir="." >
@@ -86,18 +76,7 @@
         <include name="META-INF/**" />
       </fileset>
     </copy>
-    <copy todir="${class.dir}/help">
-      <fileset dir="${help.dir}" />
-    </copy>
-    <copy todir="${class.dir}/img">
-      <fileset dir="${img.dir}" />
-    </copy>
-    <copy todir="${class.dir}/lang">
-      <fileset dir="${lang.dir}" />
-    </copy>
   </target>
-
-
 
 	<target depends="compile" name="tag" description="tags the source in the scm">
 
@@ -111,8 +90,6 @@
 
 	</target>
 
-
-
 	<!-- Libs nur dann hinzufuegen, wenn sie existieren -->
 	<target name="addlib" if="havelib">
 		<mkdir dir="${project.zipdir}/lib" />
@@ -120,20 +97,6 @@
 			<fileset dir="${lib.dir}" />
 		</copy>
 	</target>
-  <target name="addsql" if="havesql">
-    <mkdir dir="${project.zipdir}/sql" />
-    <copy todir="${project.zipdir}/sql">
-      <fileset dir="${sql.dir}" />
-    </copy>
-  </target>
-	<target name="addwebapps" if="havewebapps">
-		<mkdir dir="${project.zipdir}/webapps" />
-		<copy todir="${project.zipdir}/webapps">
-			<fileset dir="${webapps.dir}" />
-		</copy>
-	</target>
-
-
 
 	<target depends="compile" name="jar" description="generates the jar file">
 
@@ -154,8 +117,6 @@
 		</jar>
 
 	  <antcall target="addlib"/>
-    <antcall target="addsql"/>
-		<antcall target="addwebapps"/>
 
     <copy file="plugin.xml" todir="${project.zipdir}" />
 		<copy file="${build.dir}/COPYING" todir="${project.zipdir}" />
@@ -167,10 +128,8 @@
 				<include name="${plugin.name}/**" />
 			</fileset>
 		</zip>
-
+		
 	</target>
-
-
 
 	<target depends="init" name="src" description="build source package, depends compile target to make sure, the code has no errors">
 		<mkdir dir="${project.release}" />
@@ -181,9 +140,7 @@
 				<include name=".classpath" />
         <include name="plugin.xml" />
 				<include name="${lib.dir}/**" />
-        <include name="${sql.dir}/**" />
 				<include name="${src.dir}/**" />
-        <include name="${webapps.dir}/**" />
 				<include name="${build.dir}/**" />
 				<exclude name="${build.dir}/BUILD" />
 			</fileset>
@@ -195,12 +152,8 @@
 		</zip>
 	</target>
 
-
-
 	<target depends="jar" name="javadoc" description="creates the api doc">
-
 		<mkdir dir="${project.javadoc}" />
-
 		<javadoc destdir="${project.javadoc}"
 		         packagenames="${define.javadoc.package}.*"
 		         source="${define.java.version}"
@@ -219,15 +172,11 @@
 
 	</target>
 
-
-
 	<target name="clean" description="cleanup">
 		<delete dir="${project.tmp}" />
 		<delete dir="${project.javadoc}" />
 		<delete dir="${project.zipdir}" />
 	</target>
-
-
 
   <target name="sign" description="signs the jar/zip file">
 		<checksum file="${project.release}/${define.zipfilename}" />
@@ -241,15 +190,9 @@
 		</exec>
 	</target>
 
-
-
 	<target depends="init,compile,tag,jar,javadoc,src,sign,clean" description="build an official release" name="all" />
 
-
-
 	<target depends="init,compile,jar,clean" description="build inofficial release" name="fast" />
-
-
 
 	<target depends="init,compile,jar,javadoc,src" description="build nightly build" name="nightly">
 		<mkdir dir="${project.nightly}" />
