@@ -17,7 +17,7 @@ jobs:
     - name: Checkout jverein.rest
       uses: actions/checkout@v5
       with:
-        ref: '1.0.1'
+        ref: 'master'
         path: jverein.rest
 
     - name: Setup
