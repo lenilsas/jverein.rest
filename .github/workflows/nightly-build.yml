@@ -6,7 +6,7 @@ name: OpenJVerein nightly release
 on:
   push:
     branches:
-      - feature-3.2.0
+      - master
     tags-ignore:
       - '**'
 
