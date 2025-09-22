@@ -1,0 +1,58 @@
+# This workflow will build a Java project with Ant
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-ant
+
+name: jverein.rest official release
+
+on: workflow_dispatch
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout jverein.rest
+      uses: actions/checkout@v5
+      with:
+        ref: ${{ github.ref_name }}
+        path: jverein.rest
+
+    - name: Setup
+      uses: ./jverein.rest/.github/actions/build-dependencies
+
+    - name: Build jverein.rest plugin
+      id: jverein.rest
+      run: |
+        ant_output=$(ant -e -q -noinput -buildfile jverein.rest/build/build.xml)
+        echo ${ant_output}
+
+        ssa="SELECTED_VERSION="
+        ssb=".zip"
+        text="${ant_output#*${ssa}}"
+        text="${text%${ssb}*}.zip"
+        tmp_version=$(echo $text | sed -rn 's/^([^[:blank:]]*).*$/\1/p')
+        tmp_version=$tmp_version
+
+        ssa="SELECTED_FILENAME="
+        text="${ant_output#*${ssa}}"
+        text="${text%${ssb}*}.zip"
+        tmp_filename=$(echo $text | sed -rn 's/^([^[:blank:]]*).*$/\1/p')
+
+        ssa="SELECTED_PATH="
+        text="${ant_output#*${ssa}}"
+        text="${text%${ssb}*}.zip"
+        tmp_path=$(echo $text | sed -rn 's/^([^[:blank:]]*).*$/\1/p')
+
+        echo "selected_version=${tmp_version}" >> $GITHUB_OUTPUT
+        echo "selected_filename=${tmp_filename}" >> $GITHUB_OUTPUT
+        echo "selected_path=${tmp_path}" >> $GITHUB_OUTPUT
+
+        builddatetime=$(date +'%Y-%m-%d %H:%M')
+        echo "### Version: ${tmp_version} | filename: ${tmp_filename} | build datetime: ${builddatetime}" >> $GITHUB_STEP_SUMMARY
+
+    - name: Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ steps.jverein.rest.outputs.selected_version }}
+        prerelease: false
+        name: Release ${{ steps.jverein.rest.outputs.selected_version }}
+        files: ./jverein/${{ steps.jverein.rest.outputs.selected_path }}
+        generate_release_notes: true

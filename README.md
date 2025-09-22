@@ -6,6 +6,13 @@ Benötigt [jameica.webadmin](https://www.willuhn.de/products/jameica/extensions.
 
 Alle verfügbaren Services können unter [https://localhost:8080/webadmin/rest.html](https://localhost:8080/webadmin/rest.html) aufgelistet werden. Anmeldung mit admin und Masterpasswort.
 
+Bisher sind umgesetzt:
+- Beitragsgruppen anzeigen
+- Mitglieder anzeigen
+- Eigenschaften, Zusatzfelder, Sekundäre Beitragsgruppen, Zusatzbeiträge von Mitgliedern anzeigen
+- Erstellen und Ändern von Mitgliedern
+- Zusatzbeiträge erstellen
+
 Lizenz
 ------
 

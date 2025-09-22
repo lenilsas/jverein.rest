@@ -8,9 +8,9 @@
 	</classpathentry>
 	<classpathentry kind="lib" path="/jameica.webadmin/lib/json-20210307.jar"/>
 	<classpathentry kind="lib" path="/jameica.webadmin/lib/javax.servlet-api-3.1.0.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/openjverein"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/jameica.webadmin"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/jameica"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/obantoo"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/jameica"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/jameica.webadmin"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/jverein"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

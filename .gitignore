@@ -1,1 +1,11 @@
-/bin/
+.idea/
+bin
+bin.test
+releases
+lib
+lib.test
+lib.src
+.DS_Store
+*.zip
+
+target

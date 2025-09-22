@@ -656,7 +656,7 @@ public class MitgliedBean implements AutoRestBean
       {
         if (Zahlungsrhythmus.get(Integer.parseInt(zahlungsrhytmus)) == null)
           throw new ApplicationException(
-              "Ung�ltiger Zahlungsrythmus: " + zahlungsrhytmus);
+              "Ungültiger Zahlungsrythmus: " + zahlungsrhytmus);
         m.setZahlungsrhythmus(Integer.parseInt(zahlungsrhytmus));
       }
       else
@@ -860,7 +860,7 @@ public class MitgliedBean implements AutoRestBean
           && !ktoigeschlecht.toLowerCase().equals("w")
           && !ktoigeschlecht.toLowerCase().equals("o"))
         throw new ApplicationException(
-            "Ung�ltiges Geschlecht: " + ktoigeschlecht);
+            "Ungültiges Geschlecht: " + ktoigeschlecht);
       m.setKtoiGeschlecht(ktoigeschlecht);
     }
 

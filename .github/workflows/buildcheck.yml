@@ -1,0 +1,31 @@
+# This workflow will build a Java project with Ant
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-ant
+
+name: jverein.rest build check
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, edited]
+    paths:
+      - 'plugin.xml'
+      - 'build/**'
+      - 'lib/**'
+      - 'lib.src/**'
+      - 'src/**'
+      - '.github/workflows/**/*.yml'
+      - '.github/actions/**/*.yml'
+  push:
+jobs:
+  build-check:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout jverein.rest
+      uses: actions/checkout@v5
+      with:
+        path: jverein.rest
+
+    - name: Setup
+      uses: ./jverein.rest/.github/actions/build-dependencies
+
+    - name: Build jverein.rest plugin
+      run: ant -noinput -buildfile jverein.rest/build/build.xml compile
