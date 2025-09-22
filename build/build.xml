@@ -229,6 +229,11 @@
 			<param name="url" value="${jverein.url}" />
 			<param name="version" value="${jverein.version}" />
 		</antcall>
+		<antcall target="build-package">
+			<param name="name" value="jameica.webadmin" />
+			<param name="url" value="${jameica.webadmin.url}" />
+			<param name="version" value="${jameica.webadmin.version}" />
+		</antcall>
 	</target>
 
 	<target name="build-package">

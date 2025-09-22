@@ -1,11 +1,10 @@
 .idea/
 bin
 bin.test
-releases
+releases/
 lib
 lib.test
 lib.src
 .DS_Store
 *.zip
-
 target
