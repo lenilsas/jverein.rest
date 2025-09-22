@@ -56,15 +56,15 @@ jobs:
     - name: Tag repo
       uses: richardsimko/update-tag@v1
       with:
-        tag_name: ${{ steps.jverein.rest.outputs.selected_version }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        tag_name: ${{ steps.jverein-rest.outputs.selected_version }}
+#      env:
+#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     
     - name: Release
       uses: softprops/action-gh-release@v2
       with:
-        tag_name: ${{ steps.jverein.rest.outputs.selected_version }}
+        tag_name: ${{ steps.jverein-rest.outputs.selected_version }}
         prerelease: true
-        name: Release ${{ steps.jverein.rest.outputs.selected_version }}
-        files: ./jverein/${{ steps.jverein.rest.outputs.selected_path }}
+        name: Release ${{ steps.jverein-rest.outputs.selected_version }}
+        files: ./jverein/${{ steps.jvereinrest.outputs.selected_path }}
         generate_release_notes: false
