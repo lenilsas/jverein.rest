@@ -25,9 +25,6 @@ runs:
         jverein/bin/
         jverein/lib/
         jverein/releases/jverein-lib.jar
-		jverein.rest/bin/
-		jverein.rest/lib/
-		jverein.rest/releases/jverein.rest-lib.jar
       key: ${{ hashFiles('jverein.rest/build/build.properties', 'jverein.rest/build/build.xml') }}
 
   - name: Build Jameica, Hibiscus and OpenJVerein
