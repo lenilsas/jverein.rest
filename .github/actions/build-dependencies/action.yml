@@ -25,6 +25,9 @@ runs:
         jverein/bin/
         jverein/lib/
         jverein/releases/jverein-lib.jar
+		jameica.webadmin/bin/
+		jameica.webadmin/lib/
+		jameica.webadmin/releases/jameica.webadmin-lib.jar
       key: ${{ hashFiles('jverein.rest/build/build.properties', 'jverein.rest/build/build.xml') }}
 
   - name: Build Jameica, Hibiscus and OpenJVerein
