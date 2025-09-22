@@ -72,7 +72,7 @@
 			<pathelement path="../jameica/releases/jameica-lib.jar" />
 			<pathelement path="../hibiscus/releases/hibiscus-lib.jar" />
 			<pathelement path="../jverein/releases/jverein-lib.jar" />
-			<pathelement path="../jameica.webadmin/jameica.webadmin-lib.jar" />
+			<pathelement path="../jameica.webadmin/releases/jameica.webadmin-lib.jar" />
 
 			<pathelement path="${define.compilepath}" />
 			<fileset dir=".">
