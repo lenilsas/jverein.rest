@@ -9,7 +9,7 @@ runs:
       java-version: '17'
       distribution: 'temurin'
       architecture: x64
-	  cache: 'maven'
+      cache: 'maven'
 
   - name: Restore build dependencies
     id: restore-cache

@@ -19,7 +19,7 @@ jobs:
       uses: ./jverein.rest/.github/actions/build-dependencies
 
     - name: Build jverein.rest plugin
-      id: jverein.rest
+      id: jverein-rest
       run: |
         ant_output=$(ant -e -q -noinput -buildfile jverein.rest/build/build.xml)
         echo ${ant_output}
