@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.mail.internet.AddressException;
 import javax.servlet.http.HttpServletRequest;
 
 import org.json.JSONObject;
@@ -634,11 +635,6 @@ public class MitgliedBean implements AutoRestBean
     {
       if (Zahlungsweg.get(Integer.parseInt(zahlungsweg)) == null)
         throw new ApplicationException("Zahlungsweg ungültig: " + zahlungsweg);
-      if (Integer.parseInt(zahlungsweg) == Zahlungsweg.VOLLZAHLER
-          && m.getBeitragsgruppe()
-              .getBeitragsArt() != ArtBeitragsart.FAMILIE_ANGEHOERIGER)
-        throw new ApplicationException("Zahlungsweg VOLLZAHLER("
-            + Zahlungsweg.VOLLZAHLER + ") nur für Familienangehörige");
       m.setZahlungsweg(Integer.parseInt(zahlungsweg));
     }
     else
@@ -733,8 +729,14 @@ public class MitgliedBean implements AutoRestBean
     String email = request.getParameter("email");
     if (email != null && email.length() != 0)
     {
-      if (!EmailValidator.isValid(email))
+      try
+      {
+        EmailValidator.isValid(email);
+      }
+      catch (AddressException ex)
+      {
         throw new ApplicationException("Ungültige Email: " + email);
+      }
       m.setEmail(email);
     }
 
@@ -778,82 +780,38 @@ public class MitgliedBean implements AutoRestBean
       m.setGeschlecht(geschlecht);
     }
 
+    // jverein 4.x consolidated the 12 separate ktoi* fields (Anrede, Titel,
+    // Vorname, Name, Adressierungszusatz, Strasse, PLZ, Ort, Staat, Email,
+    // Personenart, Geschlecht) into a single freeform Mitglied.setKontoinhaber
+    // string. We preserve input validation (email format, geschlecht enum)
+    // and the existing personenart fallback, then assemble whatever name
+    // parts were provided into a single Kontoinhaber line.
     String ktoiadressierungszusatz = request
         .getParameter("ktoiadressierungszusatz");
-    if (ktoiadressierungszusatz != null
-        && ktoiadressierungszusatz.length() != 0)
-    {
-      m.setKtoiAdressierungszusatz(ktoiadressierungszusatz);
-    }
-
     String ktoianrede = request.getParameter("ktoianrede");
-    if (ktoianrede != null && ktoianrede.length() != 0)
-    {
-      m.setKtoiAnrede(ktoianrede);
-    }
-
     String ktoiemail = request.getParameter("ktoiemail");
+    String ktoiname = request.getParameter("ktoiname");
+    String ktoiort = request.getParameter("ktoiort");
+    String ktoipersonenart = request.getParameter("ktoipersonenart");
+    String ktoiplz = request.getParameter("ktoiplz");
+    String ktoistaat = request.getParameter("ktoistaat");
+    String ktoistrasse = request.getParameter("ktoistrasse");
+    String ktoititel = request.getParameter("ktoititel");
+    String ktoivorname = request.getParameter("ktoivorname");
+    String ktoigeschlecht = request.getParameter("ktoigeschlecht");
+
     if (ktoiemail != null && ktoiemail.length() != 0)
     {
-      if (!EmailValidator.isValid(ktoiemail))
+      try
+      {
+        EmailValidator.isValid(ktoiemail);
+      }
+      catch (AddressException ex)
+      {
         throw new ApplicationException("Ungültige Email: " + ktoiemail);
-      m.setKtoiEmail(ktoiemail);
+      }
     }
 
-    String ktoiname = request.getParameter("ktoiname");
-    if (ktoiname != null && ktoiname.length() != 0)
-    {
-      m.setKtoiName(ktoiname);
-    }
-
-    String ktoiort = request.getParameter("ktoiort");
-    if (ktoiort != null && ktoiort.length() != 0)
-    {
-      m.setKtoiOrt(ktoiort);
-    }
-
-    String ktoipersonenart = request.getParameter("ktoipersonenart");
-    if (ktoipersonenart != null && ktoipersonenart.length() != 0)
-    {
-      m.setKtoiPersonenart(ktoipersonenart.substring(0, 1));
-    }
-    else
-    {
-      if (m.getPersonenart() == null)
-        m.setPersonenart("N");
-    }
-
-    String ktoiplz = request.getParameter("ktoiplz");
-    if (ktoiplz != null && ktoiplz.length() != 0)
-    {
-      m.setKtoiPlz(ktoiplz);
-    }
-
-    String ktoistaat = request.getParameter("ktoistaat");
-    if (ktoistaat != null && ktoistaat.length() != 0)
-    {
-      m.setKtoiStaat(ktoistaat);
-    }
-
-    String ktoistrasse = request.getParameter("ktoistrasse");
-    if (ktoistrasse != null && ktoistrasse.length() != 0)
-    {
-      m.setKtoiStrasse(ktoistrasse);
-    }
-
-    String ktoititel = request.getParameter("ktoititel");
-    if (ktoititel != null && ktoititel.length() != 0)
-    {
-      m.setKtoiTitel(ktoititel);
-    }
-
-    String ktoivorname = request.getParameter("ktoivorname");
-    if (ktoivorname != null && ktoivorname.length() != 0)
-    {
-      m.setKtoiVorname(ktoivorname);
-    }
-
-    String ktoigeschlecht = request.getParameter("ktoigeschlecht");
     if (ktoigeschlecht != null && ktoigeschlecht.length() != 0)
     {
       if (!ktoigeschlecht.toLowerCase().equals("m")
@@ -861,7 +819,28 @@ public class MitgliedBean implements AutoRestBean
           && !ktoigeschlecht.toLowerCase().equals("o"))
         throw new ApplicationException(
             "Ungültiges Geschlecht: " + ktoigeschlecht);
-      m.setKtoiGeschlecht(ktoigeschlecht);
+    }
+
+    if (ktoipersonenart == null || ktoipersonenart.length() == 0)
+    {
+      if (m.getPersonenart() == null)
+        m.setPersonenart("N");
+    }
+
+    StringBuilder kontoinhaber = new StringBuilder();
+    for (String part : new String[] { ktoianrede, ktoititel, ktoivorname,
+        ktoiname })
+    {
+      if (part != null && part.length() != 0)
+      {
+        if (kontoinhaber.length() > 0)
+          kontoinhaber.append(' ');
+        kontoinhaber.append(part);
+      }
+    }
+    if (kontoinhaber.length() > 0)
+    {
+      m.setKontoinhaber(kontoinhaber.toString());
     }
 
     String kuendigung = request.getParameter("kuendigung");
