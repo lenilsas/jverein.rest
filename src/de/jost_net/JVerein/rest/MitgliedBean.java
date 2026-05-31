@@ -1,7 +1,9 @@
 package de.jost_net.JVerein.rest;
 
+import java.math.BigDecimal;
 import java.rmi.RemoteException;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -29,6 +31,7 @@ import de.jost_net.JVerein.rmi.Buchungsart;
 import de.jost_net.JVerein.rmi.Buchungsklasse;
 import de.jost_net.JVerein.rmi.Eigenschaft;
 import de.jost_net.JVerein.rmi.Eigenschaften;
+import de.jost_net.JVerein.rmi.Felddefinition;
 import de.jost_net.JVerein.rmi.Mitglied;
 import de.jost_net.JVerein.rmi.Mitgliedstyp;
 import de.jost_net.JVerein.rmi.SekundaereBeitragsgruppe;
@@ -246,8 +249,100 @@ public class MitgliedBean implements AutoRestBean
   }
 
   /**
+   * Setzt den Wert eines Zusatzfelds eines Mitglied. Erwartet einen
+   * Request-Parameter <code>value</code> mit dem neuen Wert. Der Datentyp
+   * wird aus der zugehörigen Felddefinition abgeleitet und entsprechend
+   * konvertiert (ZEICHENFOLGE/GANZZAHL/JANEIN/WAEHRUNG/DATUM). Ein leerer
+   * <code>value</code> löscht den gespeicherten Wert (setzt ihn auf null).
+   * Erstellt einen neuen Zusatzfelder-Eintrag falls noch keiner existiert,
+   * andernfalls wird der vorhandene aktualisiert.
+   *
+   * @return JSON-Objekt mit Ergebnis: <code>{ok, mitglied, name, value}</code>
+   *         oder <code>{error}</code> bei Fehler.
+   * @throws Exception
+   */
+  @Doc(value = "Setzt den Wert eines Zusatzfelds. Parameter: value. Leerer Wert löscht den Eintrag.",
+       example = "jverein/mitglied/123/zusatzfeld/transponder")
+  @Path("/jverein/mitglied/([0-9]{1,8})/zusatzfeld/([^/]+)$")
+  public Object zusatzfeldWrite(String mitgliedId, String feldName) throws Exception
+  {
+    String value = request.getParameter("value");
+    boolean clear = (value == null || value.length() == 0);
+
+    DBIterator<Felddefinition> defs = Einstellungen.getDBService()
+        .createList(Felddefinition.class);
+    defs.addFilter("name = ?", feldName);
+    if (!defs.hasNext())
+    {
+      JSONObject err = new JSONObject();
+      err.put("error", "Felddefinition nicht gefunden: " + feldName);
+      return err;
+    }
+    Felddefinition def = (Felddefinition) defs.next();
+    int datentyp = def.getDatentyp();
+
+    DBIterator<Zusatzfelder> existing = Einstellungen.getDBService()
+        .createList(Zusatzfelder.class);
+    existing.addFilter("mitglied = ?", mitgliedId);
+    existing.addFilter("felddefinition = ?", def.getID());
+    Zusatzfelder z;
+    if (existing.hasNext())
+    {
+      z = (Zusatzfelder) existing.next();
+    }
+    else
+    {
+      z = (Zusatzfelder) Einstellungen.getDBService()
+          .createObject(Zusatzfelder.class, null);
+      z.setMitglied(Integer.parseInt(mitgliedId));
+      z.setFelddefinition(Integer.parseInt(def.getID()));
+    }
+
+    try
+    {
+      switch (datentyp)
+      {
+        case Datentyp.ZEICHENFOLGE:
+          z.setFeld(clear ? null : value);
+          break;
+        case Datentyp.GANZZAHL:
+          z.setFeldGanzzahl(clear ? null : Integer.valueOf(value));
+          break;
+        case Datentyp.JANEIN:
+          z.setFeldJaNein(clear ? null : Boolean.valueOf(value));
+          break;
+        case Datentyp.WAEHRUNG:
+          z.setFeldWaehrung(clear ? null : new BigDecimal(value));
+          break;
+        case Datentyp.DATUM:
+          z.setFeldDatum(clear ? null
+              : new SimpleDateFormat("yyyy-MM-dd").parse(value));
+          break;
+        default:
+          JSONObject err = new JSONObject();
+          err.put("error", "Nicht unterstützter Datentyp: " + datentyp);
+          return err;
+      }
+      z.store();
+    }
+    catch (Exception e)
+    {
+      JSONObject err = new JSONObject();
+      err.put("error", e.getMessage());
+      return err;
+    }
+
+    JSONObject ok = new JSONObject();
+    ok.put("ok", true);
+    ok.put("mitglied", mitgliedId);
+    ok.put("name", feldName);
+    ok.put("value", clear ? JSONObject.NULL : value);
+    return ok;
+  }
+
+  /**
    * Listet die sekundären Beitragsgruppen eines Mitglied.
-   * 
+   *
    * @return Die sekundären Beitragsgruppen des Mitglies.
    * @throws Exception
    */
