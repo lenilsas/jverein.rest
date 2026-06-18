@@ -1,13 +1,16 @@
 package de.jost_net.JVerein.rest;
 
+import java.math.BigDecimal;
 import java.rmi.RemoteException;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.mail.internet.AddressException;
 import javax.servlet.http.HttpServletRequest;
 
 import org.json.JSONObject;
@@ -28,6 +31,7 @@ import de.jost_net.JVerein.rmi.Buchungsart;
 import de.jost_net.JVerein.rmi.Buchungsklasse;
 import de.jost_net.JVerein.rmi.Eigenschaft;
 import de.jost_net.JVerein.rmi.Eigenschaften;
+import de.jost_net.JVerein.rmi.Felddefinition;
 import de.jost_net.JVerein.rmi.Mitglied;
 import de.jost_net.JVerein.rmi.Mitgliedstyp;
 import de.jost_net.JVerein.rmi.SekundaereBeitragsgruppe;
@@ -245,8 +249,100 @@ public class MitgliedBean implements AutoRestBean
   }
 
   /**
+   * Setzt den Wert eines Zusatzfelds eines Mitglied. Erwartet einen
+   * Request-Parameter <code>value</code> mit dem neuen Wert. Der Datentyp
+   * wird aus der zugehörigen Felddefinition abgeleitet und entsprechend
+   * konvertiert (ZEICHENFOLGE/GANZZAHL/JANEIN/WAEHRUNG/DATUM). Ein leerer
+   * <code>value</code> löscht den gespeicherten Wert (setzt ihn auf null).
+   * Erstellt einen neuen Zusatzfelder-Eintrag falls noch keiner existiert,
+   * andernfalls wird der vorhandene aktualisiert.
+   *
+   * @return JSON-Objekt mit Ergebnis: <code>{ok, mitglied, name, value}</code>
+   *         oder <code>{error}</code> bei Fehler.
+   * @throws Exception
+   */
+  @Doc(value = "Setzt den Wert eines Zusatzfelds. Parameter: value. Leerer Wert löscht den Eintrag.",
+       example = "jverein/mitglied/123/zusatzfeld/transponder")
+  @Path("/jverein/mitglied/([0-9]{1,8})/zusatzfeld/([^/]+)$")
+  public Object zusatzfeldWrite(String mitgliedId, String feldName) throws Exception
+  {
+    String value = request.getParameter("value");
+    boolean clear = (value == null || value.length() == 0);
+
+    DBIterator<Felddefinition> defs = Einstellungen.getDBService()
+        .createList(Felddefinition.class);
+    defs.addFilter("name = ?", feldName);
+    if (!defs.hasNext())
+    {
+      JSONObject err = new JSONObject();
+      err.put("error", "Felddefinition nicht gefunden: " + feldName);
+      return err;
+    }
+    Felddefinition def = (Felddefinition) defs.next();
+    int datentyp = def.getDatentyp();
+
+    DBIterator<Zusatzfelder> existing = Einstellungen.getDBService()
+        .createList(Zusatzfelder.class);
+    existing.addFilter("mitglied = ?", mitgliedId);
+    existing.addFilter("felddefinition = ?", def.getID());
+    Zusatzfelder z;
+    if (existing.hasNext())
+    {
+      z = (Zusatzfelder) existing.next();
+    }
+    else
+    {
+      z = (Zusatzfelder) Einstellungen.getDBService()
+          .createObject(Zusatzfelder.class, null);
+      z.setMitglied(Integer.parseInt(mitgliedId));
+      z.setFelddefinition(Integer.parseInt(def.getID()));
+    }
+
+    try
+    {
+      switch (datentyp)
+      {
+        case Datentyp.ZEICHENFOLGE:
+          z.setFeld(clear ? null : value);
+          break;
+        case Datentyp.GANZZAHL:
+          z.setFeldGanzzahl(clear ? null : Integer.valueOf(value));
+          break;
+        case Datentyp.JANEIN:
+          z.setFeldJaNein(clear ? null : Boolean.valueOf(value));
+          break;
+        case Datentyp.WAEHRUNG:
+          z.setFeldWaehrung(clear ? null : new BigDecimal(value));
+          break;
+        case Datentyp.DATUM:
+          z.setFeldDatum(clear ? null
+              : new SimpleDateFormat("yyyy-MM-dd").parse(value));
+          break;
+        default:
+          JSONObject err = new JSONObject();
+          err.put("error", "Nicht unterstützter Datentyp: " + datentyp);
+          return err;
+      }
+      z.store();
+    }
+    catch (Exception e)
+    {
+      JSONObject err = new JSONObject();
+      err.put("error", e.getMessage());
+      return err;
+    }
+
+    JSONObject ok = new JSONObject();
+    ok.put("ok", true);
+    ok.put("mitglied", mitgliedId);
+    ok.put("name", feldName);
+    ok.put("value", clear ? JSONObject.NULL : value);
+    return ok;
+  }
+
+  /**
    * Listet die sekundären Beitragsgruppen eines Mitglied.
-   * 
+   *
    * @return Die sekundären Beitragsgruppen des Mitglies.
    * @throws Exception
    */
@@ -634,11 +730,6 @@ public class MitgliedBean implements AutoRestBean
     {
       if (Zahlungsweg.get(Integer.parseInt(zahlungsweg)) == null)
         throw new ApplicationException("Zahlungsweg ungültig: " + zahlungsweg);
-      if (Integer.parseInt(zahlungsweg) == Zahlungsweg.VOLLZAHLER
-          && m.getBeitragsgruppe()
-              .getBeitragsArt() != ArtBeitragsart.FAMILIE_ANGEHOERIGER)
-        throw new ApplicationException("Zahlungsweg VOLLZAHLER("
-            + Zahlungsweg.VOLLZAHLER + ") nur für Familienangehörige");
       m.setZahlungsweg(Integer.parseInt(zahlungsweg));
     }
     else
@@ -733,8 +824,14 @@ public class MitgliedBean implements AutoRestBean
     String email = request.getParameter("email");
     if (email != null && email.length() != 0)
     {
-      if (!EmailValidator.isValid(email))
+      try
+      {
+        EmailValidator.isValid(email);
+      }
+      catch (AddressException ex)
+      {
         throw new ApplicationException("Ungültige Email: " + email);
+      }
       m.setEmail(email);
     }
 
@@ -778,82 +875,38 @@ public class MitgliedBean implements AutoRestBean
       m.setGeschlecht(geschlecht);
     }
 
+    // jverein 4.x consolidated the 12 separate ktoi* fields (Anrede, Titel,
+    // Vorname, Name, Adressierungszusatz, Strasse, PLZ, Ort, Staat, Email,
+    // Personenart, Geschlecht) into a single freeform Mitglied.setKontoinhaber
+    // string. We preserve input validation (email format, geschlecht enum)
+    // and the existing personenart fallback, then assemble whatever name
+    // parts were provided into a single Kontoinhaber line.
     String ktoiadressierungszusatz = request
         .getParameter("ktoiadressierungszusatz");
-    if (ktoiadressierungszusatz != null
-        && ktoiadressierungszusatz.length() != 0)
-    {
-      m.setKtoiAdressierungszusatz(ktoiadressierungszusatz);
-    }
-
     String ktoianrede = request.getParameter("ktoianrede");
-    if (ktoianrede != null && ktoianrede.length() != 0)
-    {
-      m.setKtoiAnrede(ktoianrede);
-    }
-
     String ktoiemail = request.getParameter("ktoiemail");
+    String ktoiname = request.getParameter("ktoiname");
+    String ktoiort = request.getParameter("ktoiort");
+    String ktoipersonenart = request.getParameter("ktoipersonenart");
+    String ktoiplz = request.getParameter("ktoiplz");
+    String ktoistaat = request.getParameter("ktoistaat");
+    String ktoistrasse = request.getParameter("ktoistrasse");
+    String ktoititel = request.getParameter("ktoititel");
+    String ktoivorname = request.getParameter("ktoivorname");
+    String ktoigeschlecht = request.getParameter("ktoigeschlecht");
+
     if (ktoiemail != null && ktoiemail.length() != 0)
     {
-      if (!EmailValidator.isValid(ktoiemail))
+      try
+      {
+        EmailValidator.isValid(ktoiemail);
+      }
+      catch (AddressException ex)
+      {
         throw new ApplicationException("Ungültige Email: " + ktoiemail);
-      m.setKtoiEmail(ktoiemail);
+      }
     }
 
-    String ktoiname = request.getParameter("ktoiname");
-    if (ktoiname != null && ktoiname.length() != 0)
-    {
-      m.setKtoiName(ktoiname);
-    }
-
-    String ktoiort = request.getParameter("ktoiort");
-    if (ktoiort != null && ktoiort.length() != 0)
-    {
-      m.setKtoiOrt(ktoiort);
-    }
-
-    String ktoipersonenart = request.getParameter("ktoipersonenart");
-    if (ktoipersonenart != null && ktoipersonenart.length() != 0)
-    {
-      m.setKtoiPersonenart(ktoipersonenart.substring(0, 1));
-    }
-    else
-    {
-      if (m.getPersonenart() == null)
-        m.setPersonenart("N");
-    }
-
-    String ktoiplz = request.getParameter("ktoiplz");
-    if (ktoiplz != null && ktoiplz.length() != 0)
-    {
-      m.setKtoiPlz(ktoiplz);
-    }
-
-    String ktoistaat = request.getParameter("ktoistaat");
-    if (ktoistaat != null && ktoistaat.length() != 0)
-    {
-      m.setKtoiStaat(ktoistaat);
-    }
-
-    String ktoistrasse = request.getParameter("ktoistrasse");
-    if (ktoistrasse != null && ktoistrasse.length() != 0)
-    {
-      m.setKtoiStrasse(ktoistrasse);
-    }
-
-    String ktoititel = request.getParameter("ktoititel");
-    if (ktoititel != null && ktoititel.length() != 0)
-    {
-      m.setKtoiTitel(ktoititel);
-    }
-
-    String ktoivorname = request.getParameter("ktoivorname");
-    if (ktoivorname != null && ktoivorname.length() != 0)
-    {
-      m.setKtoiVorname(ktoivorname);
-    }
-
-    String ktoigeschlecht = request.getParameter("ktoigeschlecht");
     if (ktoigeschlecht != null && ktoigeschlecht.length() != 0)
     {
       if (!ktoigeschlecht.toLowerCase().equals("m")
@@ -861,7 +914,28 @@ public class MitgliedBean implements AutoRestBean
           && !ktoigeschlecht.toLowerCase().equals("o"))
         throw new ApplicationException(
             "Ungültiges Geschlecht: " + ktoigeschlecht);
-      m.setKtoiGeschlecht(ktoigeschlecht);
+    }
+
+    if (ktoipersonenart == null || ktoipersonenart.length() == 0)
+    {
+      if (m.getPersonenart() == null)
+        m.setPersonenart("N");
+    }
+
+    StringBuilder kontoinhaber = new StringBuilder();
+    for (String part : new String[] { ktoianrede, ktoititel, ktoivorname,
+        ktoiname })
+    {
+      if (part != null && part.length() != 0)
+      {
+        if (kontoinhaber.length() > 0)
+          kontoinhaber.append(' ');
+        kontoinhaber.append(part);
+      }
+    }
+    if (kontoinhaber.length() > 0)
+    {
+      m.setKontoinhaber(kontoinhaber.toString());
     }
 
     String kuendigung = request.getParameter("kuendigung");
